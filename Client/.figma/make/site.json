@@ -1,0 +1,10 @@
+{
+  "description": "Connect patients with doctors through an intuitive platform for managing appointments, profiles, and availability, ensuring seamless healthcare access.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

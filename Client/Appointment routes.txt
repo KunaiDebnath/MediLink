@@ -1,0 +1,32 @@
+Appointment routes
+
+http://localhost:5000/api/appointments
+http://localhost:5000/api/appointments/my
+http://localhost:5000/api/appointments/:id/cancel
+http://localhost:5000/api/appointments/doctor
+http://localhost:5000/api/appointments/:id/confirm
+http://localhost:5000/api/appointments/:id/reject
+http://localhost:5000/api/appointments/:id/complete
+
+
+Auth routes
+
+http://localhost:5000/api/auth/register/patient
+http://localhost:5000/api/auth/login
+http://localhost:5000/api/auth/register/doctor
+http://localhost:5000/api/auth/me
+
+Doctor routes
+
+http://localhost:5000/api/doctors/profile
+http://localhost:5000/api/doctors/profile
+http://localhost:5000/api/doctors
+http://localhost:5000/api/doctors/:id/slots
+
+Patients routes
+
+http://localhost:5000/api/patients/profile
+http://localhost:5000/api/patients/profile
+
+
+
