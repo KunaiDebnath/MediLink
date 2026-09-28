@@ -1,9 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const connectDB = require("./config/db");
-const testRoutes = require("./routes/testRoutes");
 const errorMiddleware = require("./middleware/errorMiddleware");
-const protectedRoutes = require("./routes/protectedRoutes");
 const authRoutes = require("./routes/authRoutes");
 const patientRoutes = require("./routes/patientRoutes");
 const doctorRoutes = require("./routes/doctorRoutes");
