@@ -22,7 +22,7 @@ const authLimiter = rateLimit({
 const app = express();
 app.use(
     cors({
-        origin: "https://medilink-roan.vercel.app/"
+        origin: "https://medilink-roan.vercel.app"
     })
 );
 connectDB();
