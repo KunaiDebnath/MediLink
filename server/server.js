@@ -42,8 +42,6 @@ app.get("/", (req, res) => {
     res.send("Welcome to MediLink!");
 });
 
-app.use("/api", testRoutes);
-app.use("/api", protectedRoutes);
 app.use("/api/auth",authLimiter, authRoutes);
 app.use("/api/patients", patientRoutes);
 app.use("/api/doctors", doctorRoutes);
