@@ -1,4 +1,5 @@
 export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const DIRECT_BACKEND_URL = 'http://localhost:5000/api';
 
 // Token helpers
 export const getToken = (): string | null => {
@@ -28,12 +29,30 @@ export async function apiRequest<T = any>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+  const primaryUrl = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(primaryUrl, {
+      ...options,
+      headers,
+    });
+  } catch (primaryErr: any) {
+    // If relative /api fetch fails (e.g. Vite proxy not reachable), fallback to direct backend url
+    if (!endpoint.startsWith('http') && API_BASE_URL !== DIRECT_BACKEND_URL) {
+      try {
+        const fallbackUrl = `${DIRECT_BACKEND_URL}${endpoint}`;
+        response = await fetch(fallbackUrl, {
+          ...options,
+          headers,
+        });
+      } catch {
+        throw new Error(`Failed to connect to backend server at ${primaryUrl} or ${DIRECT_BACKEND_URL}. Please make sure your backend Express server is running on port 5000.`);
+      }
+    } else {
+      throw new Error(`Failed to connect to backend server. Please make sure your backend server is running on port 5000.`);
+    }
+  }
 
   const contentType = response.headers.get('content-type');
   let data: any = null;
