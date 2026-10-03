@@ -194,9 +194,15 @@ export async function updateDoctorAvailabilityApi(availabilityData: Record<strin
     }
   });
 
+  // Include both { availability: formatted } and flat keys to support any backend Mongoose schema
+  const body = {
+    availability: formatted,
+    ...formatted,
+  };
+
   return apiRequest('/doctors/profile', {
     method: 'PUT',
-    body: JSON.stringify(formatted),
+    body: JSON.stringify(body),
   });
 }
 

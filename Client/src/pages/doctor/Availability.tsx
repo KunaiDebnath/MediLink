@@ -33,11 +33,17 @@ export default function DoctorAvailability({ onToast }: DoctorAvailabilityProps)
       try {
         const res = await getDoctorProfileApi();
         const data = res.profile || res.doctor || res;
-        if (data && data.availability) {
+        if (data && (data.availability || data)) {
+          const availSource = data.availability || data;
           const loaded: Record<string, DaySlot> = {};
           DAYS.forEach(day => {
-            const avail = data.availability[day];
-            loaded[day] = avail ? { enabled: true, start: avail.start, end: avail.end } : { ...defaultSlot };
+            const avail =
+              availSource[day] ||
+              availSource[day.toLowerCase()] ||
+              availSource[day.toUpperCase()];
+            loaded[day] = (avail && avail.start && avail.end)
+              ? { enabled: true, start: avail.start, end: avail.end }
+              : { ...defaultSlot };
           });
           setSchedule(loaded);
         }

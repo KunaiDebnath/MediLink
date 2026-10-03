@@ -47,6 +47,17 @@ export default function BookAppointment({ doctorId, user, navigate, onToast }: B
         const docs = Array.isArray(res) ? res : res.doctors || [];
         const found = docs.find((d: any) => d._id === doctorId || d.id === doctorId);
         if (found) {
+          const rawAvail = found.availability || {};
+          const normalizedAvail: Record<string, { start: string; end: string } | null> = {
+            Monday: rawAvail.monday || rawAvail.Monday || (rawAvail.Monday?.start ? rawAvail.Monday : null) || null,
+            Tuesday: rawAvail.tuesday || rawAvail.Tuesday || (rawAvail.Tuesday?.start ? rawAvail.Tuesday : null) || null,
+            Wednesday: rawAvail.wednesday || rawAvail.Wednesday || (rawAvail.Wednesday?.start ? rawAvail.Wednesday : null) || null,
+            Thursday: rawAvail.thursday || rawAvail.Thursday || (rawAvail.Thursday?.start ? rawAvail.Thursday : null) || null,
+            Friday: rawAvail.friday || rawAvail.Friday || (rawAvail.Friday?.start ? rawAvail.Friday : null) || null,
+            Saturday: rawAvail.saturday || rawAvail.Saturday || (rawAvail.Saturday?.start ? rawAvail.Saturday : null) || null,
+            Sunday: rawAvail.sunday || rawAvail.Sunday || (rawAvail.Sunday?.start ? rawAvail.Sunday : null) || null,
+          };
+
           setDoctor({
             id: found._id || found.id || doctorId,
             name: found.fullName || found.name || 'Doctor',
@@ -60,15 +71,7 @@ export default function BookAppointment({ doctorId, user, navigate, onToast }: B
             location: found.clinicAddress || found.location || found.hospitalName || 'City Hospital',
             consultationFee: found.consultationFee !== undefined ? Number(found.consultationFee) : 0,
             bio: found.bio || '',
-            availability: {
-              Monday: found.availability?.monday || found.availability?.Monday || null,
-              Tuesday: found.availability?.tuesday || found.availability?.Tuesday || null,
-              Wednesday: found.availability?.wednesday || found.availability?.Wednesday || null,
-              Thursday: found.availability?.thursday || found.availability?.Thursday || null,
-              Friday: found.availability?.friday || found.availability?.Friday || null,
-              Saturday: found.availability?.saturday || found.availability?.Saturday || null,
-              Sunday: found.availability?.sunday || found.availability?.Sunday || null,
-            },
+            availability: normalizedAvail,
             rating: found.rating || 5.0,
             reviewCount: found.reviewCount || 0,
           });
@@ -93,22 +96,63 @@ export default function BookAppointment({ doctorId, user, navigate, onToast }: B
       setLoadingSlots(true);
       try {
         const res = await getDoctorSlotsApi(doctorId, selectedDate);
-        if (res && res.slots && Array.isArray(res.slots)) {
+        if (res && res.slots && Array.isArray(res.slots) && res.slots.length > 0) {
           setApiSlots(res.slots);
-        } else if (Array.isArray(res)) {
+        } else if (Array.isArray(res) && res.length > 0) {
           setApiSlots(res);
         } else {
-          setApiSlots([]);
+          // Generate fallback slots if doctor has set hours for this day of week
+          const dow = getDayOfWeek(selectedDate);
+          const dayAvail = doctor?.availability?.[dow] || (doctor?.availability as any)?.[dow.toLowerCase()];
+          if (dayAvail && dayAvail.start && dayAvail.end) {
+            const [sh, sm] = dayAvail.start.split(':').map(Number);
+            const [eh, em] = dayAvail.end.split(':').map(Number);
+            const generated: string[] = [];
+            let currentMin = sh * 60 + sm;
+            const endMin = eh * 60 + em;
+            while (currentMin + 30 <= endMin) {
+              const h = Math.floor(currentMin / 60);
+              const m = currentMin % 60;
+              const period = h >= 12 ? 'PM' : 'AM';
+              const dispH = h % 12 === 0 ? 12 : h % 12;
+              const dispM = m === 0 ? '00' : String(m).padStart(2, '0');
+              generated.push(`${dispH}:${dispM} ${period}`);
+              currentMin += 30;
+            }
+            setApiSlots(generated.length ? generated : ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:00 PM', '04:00 PM']);
+          } else {
+            setApiSlots([]);
+          }
         }
       } catch (err) {
         console.warn('Could not fetch dynamic slots from backend:', err);
-        setApiSlots([]);
+        const dow = getDayOfWeek(selectedDate);
+        const dayAvail = doctor?.availability?.[dow] || (doctor?.availability as any)?.[dow.toLowerCase()];
+        if (dayAvail && dayAvail.start && dayAvail.end) {
+          const [sh, sm] = dayAvail.start.split(':').map(Number);
+          const [eh, em] = dayAvail.end.split(':').map(Number);
+          const generated: string[] = [];
+          let currentMin = sh * 60 + sm;
+          const endMin = eh * 60 + em;
+          while (currentMin + 30 <= endMin) {
+            const h = Math.floor(currentMin / 60);
+            const m = currentMin % 60;
+            const period = h >= 12 ? 'PM' : 'AM';
+            const dispH = h % 12 === 0 ? 12 : h % 12;
+            const dispM = m === 0 ? '00' : String(m).padStart(2, '0');
+            generated.push(`${dispH}:${dispM} ${period}`);
+            currentMin += 30;
+          }
+          setApiSlots(generated.length ? generated : ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:00 PM', '04:00 PM']);
+        } else {
+          setApiSlots([]);
+        }
       } finally {
         setLoadingSlots(false);
       }
     }
     loadSlots();
-  }, [doctorId, selectedDate]);
+  }, [doctorId, selectedDate, doctor]);
 
   const calDays = getCalendarDays(calYear, calMonth);
 
@@ -116,16 +160,17 @@ export default function BookAppointment({ doctorId, user, navigate, onToast }: B
     `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
   const getDayOfWeek = (dateStr: string) => {
-    const d = new Date(dateStr);
+    const d = new Date(dateStr + 'T00:00:00');
     return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d.getDay()];
   };
 
   const isDateAvailable = (day: number) => {
     const dateStr = getDateString(day);
-    const d = new Date(dateStr);
+    const d = new Date(dateStr + 'T23:59:59');
     if (d < today) return false;
     const dow = getDayOfWeek(dateStr);
-    return !!(doctor?.availability && (doctor.availability[dow] || doctor.availability[dow.toLowerCase()]));
+    const avail = doctor?.availability?.[dow] || (doctor?.availability as any)?.[dow.toLowerCase()];
+    return !!(avail && (avail.start || avail.end));
   };
 
   const timeSlots: string[] = apiSlots;
