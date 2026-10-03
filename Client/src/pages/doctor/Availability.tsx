@@ -16,6 +16,23 @@ interface DaySlot {
 
 const defaultSlot: DaySlot = { enabled: false, start: '09:00', end: '17:00' };
 
+export const TIME_OPTIONS: string[] = [];
+for (let h = 0; h < 24; h++) {
+  const hh = String(h).padStart(2, '0');
+  TIME_OPTIONS.push(`${hh}:00`);
+  TIME_OPTIONS.push(`${hh}:30`);
+}
+
+export function formatTimeDisplay(timeStr: string) {
+  if (!timeStr) return '';
+  const [hStr, mStr] = timeStr.split(':');
+  const h = parseInt(hStr, 10);
+  const m = mStr || '00';
+  const period = h >= 12 ? 'PM' : 'AM';
+  const dispH = h % 12 === 0 ? 12 : h % 12;
+  return `${dispH}:${m} ${period}`;
+}
+
 function initAvailability(): Record<string, DaySlot> {
   return Object.fromEntries(
     DAYS.map(day => [day, { ...defaultSlot }])
@@ -158,34 +175,44 @@ export default function DoctorAvailability({ onToast }: DoctorAvailabilityProps)
                     </label>
 
                     {slot.enabled ? (
-                      <div className="flex items-center gap-2 flex-1 flex-wrap">
+                      <div className="flex items-center gap-3 flex-1 flex-wrap">
                         <div className="flex flex-col gap-0.5">
-                          <label className="text-xs text-slate-400" htmlFor={`start-${day}`}>Start</label>
-                          <input
+                          <label className="text-xs font-medium text-slate-500" htmlFor={`start-${day}`}>Start Time</label>
+                          <select
                             id={`start-${day}`}
-                            type="time"
                             value={slot.start}
                             onChange={e => setDay(day, 'start', e.target.value)}
-                            className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm text-slate-900 bg-white focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-colors"
-                          />
+                            className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-900 bg-white font-medium focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-colors cursor-pointer"
+                          >
+                            {TIME_OPTIONS.map(time => (
+                              <option key={time} value={time}>
+                                {formatTimeDisplay(time)} ({time})
+                              </option>
+                            ))}
+                          </select>
                         </div>
-                        <span className="text-slate-300 mt-4">→</span>
+                        <span className="text-slate-300 mt-4 text-base font-bold">→</span>
                         <div className="flex flex-col gap-0.5">
-                          <label className="text-xs text-slate-400" htmlFor={`end-${day}`}>End</label>
-                          <input
+                          <label className="text-xs font-medium text-slate-500" htmlFor={`end-${day}`}>End Time</label>
+                          <select
                             id={`end-${day}`}
-                            type="time"
                             value={slot.end}
                             onChange={e => setDay(day, 'end', e.target.value)}
-                            className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm text-slate-900 bg-white focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-colors"
-                          />
+                            className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-900 bg-white font-medium focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-colors cursor-pointer"
+                          >
+                            {TIME_OPTIONS.map(time => (
+                              <option key={time} value={time}>
+                                {formatTimeDisplay(time)} ({time})
+                              </option>
+                            ))}
+                          </select>
                         </div>
                         {slot.start && slot.end && slot.start < slot.end && (
-                          <span className="text-xs text-slate-400 mt-4">
+                          <span className="text-xs font-medium text-brand-600 bg-brand-50 px-2.5 py-1 rounded-md mt-4">
                             {Math.round((
                               (parseInt(slot.end.split(':')[0]) * 60 + parseInt(slot.end.split(':')[1])) -
                               (parseInt(slot.start.split(':')[0]) * 60 + parseInt(slot.start.split(':')[1]))
-                            ) / 30)} slots
+                            ) / 30)} slots (30m each)
                           </span>
                         )}
                       </div>

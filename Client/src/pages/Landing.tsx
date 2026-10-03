@@ -265,7 +265,7 @@ export default function Landing({ navigate }: LandingProps) {
               </div>
               Medi<span className="text-brand-400">Link</span>
             </div>
-            <p className="text-sm text-slate-500">© 2026 MediLink. All rights reserved.</p>
+            <p className="text-sm text-slate-500">© 2026 MediLink(Kunai). All rights reserved.</p>
             <div className="flex gap-4 text-sm">
               <a href="#" className="hover:text-white transition-colors">Privacy</a>
               <a href="#" className="hover:text-white transition-colors">Terms</a>
