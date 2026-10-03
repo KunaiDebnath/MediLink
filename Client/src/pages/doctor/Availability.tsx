@@ -78,21 +78,23 @@ export default function DoctorAvailability({ onToast }: DoctorAvailabilityProps)
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setSaving(true);
 
-    const formattedAvail: Record<string, { start: string; end: string }> = {};
+    const formattedAvail: Record<string, { start: string; end: string } | null> = {};
     DAYS.forEach(day => {
       const slot = schedule[day];
       if (slot.enabled && slot.start && slot.end) {
         formattedAvail[day.toLowerCase()] = { start: slot.start, end: slot.end };
+      } else {
+        formattedAvail[day.toLowerCase()] = null;
       }
     });
 
     try {
       await updateDoctorAvailabilityApi(formattedAvail);
       setSaved(true);
-      onToast('Availability updated successfully', 'success');
+      onToast('Availability updated and saved to profile!', 'success');
     } catch (err: any) {
-      setSaved(true);
-      onToast(err.message || 'Availability updated locally', 'success');
+      setSaved(false);
+      onToast(err.message || 'Failed to save availability to backend server.', 'error');
     } finally {
       setSaving(false);
     }

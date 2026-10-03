@@ -200,28 +200,36 @@ export async function updateDoctorProfileApi(profileData: {
   });
 }
 
-// PUT http://localhost:5000/api/doctors/profile (or availability handler if wired)
-export async function updateDoctorAvailabilityApi(availabilityData: Record<string, { start: string; end: string }>) {
-  // Lowercase keys strictly: monday, tuesday, etc.
-  const formatted: Record<string, { start: string; end: string }> = {};
+// PUT http://localhost:5000/api/doctors/profile
+export async function updateDoctorAvailabilityApi(availabilityData: Record<string, { start: string; end: string } | null>) {
+  // Exact Mongoose schema keys: monday, tuesday, wednesday, thursday, friday, saturday, sunday
+  const availability: Record<string, { start: string; end: string } | null> = {
+    monday: null,
+    tuesday: null,
+    wednesday: null,
+    thursday: null,
+    friday: null,
+    saturday: null,
+    sunday: null,
+  };
+
   Object.entries(availabilityData).forEach(([day, slot]) => {
-    if (slot && slot.start && slot.end) {
-      formatted[day.toLowerCase()] = {
-        start: slot.start,
-        end: slot.end,
-      };
+    const key = day.toLowerCase();
+    if (key in availability) {
+      if (slot && slot.start && slot.end) {
+        availability[key] = {
+          start: slot.start,
+          end: slot.end,
+        };
+      } else {
+        availability[key] = null;
+      }
     }
   });
 
-  // Include both { availability: formatted } and flat keys to support any backend Mongoose schema
-  const body = {
-    availability: formatted,
-    ...formatted,
-  };
-
   return apiRequest('/doctors/profile', {
     method: 'PUT',
-    body: JSON.stringify(body),
+    body: JSON.stringify({ availability }),
   });
 }
 
