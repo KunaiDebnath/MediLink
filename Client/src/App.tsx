@@ -38,44 +38,116 @@ export default function App() {
       try {
         const token = getToken();
         if (token) {
-          const res = await getMeApi();
-          const u = res.user || res.data?.user || res;
-          if (u && (u.role || u._id)) {
-            const role = u.role || 'patient';
-            let fullName = '';
-            let profileId = u._id || u.id;
-
-            // Fetch patient or doctor profile to get the actual full name
+          const decodeJwt = (t: string) => {
             try {
-              if (role === 'patient') {
-                const patRes = await getPatientProfileApi();
-                const pat = patRes.patient || patRes.profile || patRes;
-                if (pat && pat.fullName) {
-                  fullName = pat.fullName;
-                  profileId = pat._id || profileId;
-                }
-              } else if (role === 'doctor') {
-                const docRes = await getDoctorProfileApi();
-                const doc = docRes.doctor || docRes.profile || docRes;
-                if (doc && doc.fullName) {
-                  fullName = doc.fullName;
-                  profileId = doc._id || profileId;
-                }
+              const base64Url = t.split('.')[1];
+              if (!base64Url) return null;
+              const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+              const jsonPayload = decodeURIComponent(
+                atob(base64)
+                  .split('')
+                  .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                  .join('')
+              );
+              return JSON.parse(jsonPayload);
+            } catch {
+              return null;
+            }
+          };
+
+          const tokenPayload = decodeJwt(token);
+          let res: any = null;
+          try {
+            res = await getMeApi();
+          } catch {
+            // getMeApi might fail or not exist
+          }
+
+          const rawRole =
+            res?.role ||
+            res?.user?.role ||
+            res?.data?.user?.role ||
+            res?.data?.role ||
+            res?.userType ||
+            tokenPayload?.role ||
+            tokenPayload?.userType ||
+            tokenPayload?.type ||
+            '';
+
+          let role: 'doctor' | 'patient' | '' =
+            typeof rawRole === 'string' && rawRole.toLowerCase().includes('doc')
+              ? 'doctor'
+              : typeof rawRole === 'string' && rawRole.toLowerCase().includes('pat')
+              ? 'patient'
+              : '';
+
+          let fullName = '';
+          let profileId =
+            res?.user?._id ||
+            res?.user?.id ||
+            res?.data?.user?._id ||
+            res?.data?.user?.id ||
+            tokenPayload?.id ||
+            tokenPayload?._id ||
+            '';
+
+          // If role is still unknown, check doctor profile endpoint
+          if (!role) {
+            try {
+              const docRes = await getDoctorProfileApi();
+              const doc = docRes?.doctor || docRes?.profile || docRes?.data || docRes;
+              if (doc && (doc._id || doc.fullName || doc.specialization)) {
+                role = 'doctor';
+                fullName = doc.fullName || fullName;
+                profileId = doc._id || profileId;
               }
             } catch {
-              // Ignore profile fetch failure
+              role = 'patient';
             }
-
-            const fetchedUser: User = {
-              id: profileId,
-              name: fullName || u.fullName || u.name || (u.email ? u.email.split('@')[0] : (role === 'doctor' ? 'Doctor' : 'Patient')),
-              email: u.email || '',
-              role: role,
-            };
-            setUser(fetchedUser);
-            // Default to dashboard on first load if currently on landing
-            setPage(prev => prev === 'landing' ? (role === 'patient' ? 'patient-dashboard' : 'doctor-dashboard') : prev);
           }
+
+          if (!role) role = 'patient';
+
+          // Fetch patient or doctor profile to get the actual full name
+          try {
+            if (role === 'doctor') {
+              const docRes = await getDoctorProfileApi();
+              const doc = docRes?.doctor || docRes?.profile || docRes?.data || docRes;
+              if (doc && doc.fullName) {
+                fullName = doc.fullName;
+                profileId = doc._id || doc.id || profileId;
+              }
+            } else {
+              const patRes = await getPatientProfileApi();
+              const pat = patRes?.patient || patRes?.profile || patRes?.data || patRes;
+              if (pat && pat.fullName) {
+                fullName = pat.fullName;
+                profileId = pat._id || pat.id || profileId;
+              }
+            }
+          } catch {
+            // Ignore profile fetch failure
+          }
+
+          const rawName =
+            fullName ||
+            res?.user?.fullName ||
+            res?.user?.name ||
+            res?.data?.user?.fullName ||
+            res?.data?.user?.name ||
+            tokenPayload?.name ||
+            tokenPayload?.fullName ||
+            (role === 'doctor' ? 'Doctor' : 'Patient');
+
+          const fetchedUser: User = {
+            id: profileId,
+            name: rawName,
+            email: res?.user?.email || res?.data?.user?.email || tokenPayload?.email || '',
+            role: role as 'doctor' | 'patient',
+          };
+          setUser(fetchedUser);
+          // Default to dashboard on first load if currently on landing
+          setPage(prev => prev === 'landing' ? (role === 'patient' ? 'patient-dashboard' : 'doctor-dashboard') : prev);
         }
       } catch (err) {
         console.warn('Auth verify failed:', err);

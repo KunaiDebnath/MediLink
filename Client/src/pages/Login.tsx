@@ -37,37 +37,101 @@ export default function Login({ navigate, onLogin }: LoginProps) {
       if (res.token) {
         setToken(res.token);
       }
-      const u = res.user || res.data?.user || res;
-      let role = u.role || (form.email.includes('doctor') ? 'doctor' : 'patient');
-      let fullName = '';
-      let profileId = u._id || u.id;
+      // Helper to parse JWT payload if present
+      const decodeJwt = (token: string) => {
+        try {
+          const base64Url = token.split('.')[1];
+          if (!base64Url) return null;
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = decodeURIComponent(
+            atob(base64)
+              .split('')
+              .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+              .join('')
+          );
+          return JSON.parse(jsonPayload);
+        } catch {
+          return null;
+        }
+      };
 
-      // Also get their profile to display their exact full name immediately
-      try {
-        if (role === 'patient') {
-          const patRes = await getPatientProfileApi();
-          const pat = patRes.patient || patRes.profile || patRes;
-          if (pat && pat.fullName) {
-            fullName = pat.fullName;
-            profileId = pat._id || profileId;
+      const tokenPayload = res.token ? decodeJwt(res.token) : null;
+      const rawRole =
+        res.role ||
+        res.user?.role ||
+        res.data?.user?.role ||
+        res.data?.role ||
+        res.userType ||
+        tokenPayload?.role ||
+        tokenPayload?.userType ||
+        tokenPayload?.type ||
+        '';
+
+      let role: 'doctor' | 'patient' | '' =
+        typeof rawRole === 'string' && rawRole.toLowerCase().includes('doc')
+          ? 'doctor'
+          : typeof rawRole === 'string' && rawRole.toLowerCase().includes('pat')
+          ? 'patient'
+          : '';
+
+      let fullName = '';
+      let profileId = res.user?._id || res.user?.id || res.data?.user?._id || res.data?.user?.id || tokenPayload?.id || tokenPayload?._id || '';
+
+      // If role is still undetermined, test doctor profile endpoint
+      if (!role) {
+        try {
+          const docTest = await getDoctorProfileApi();
+          const docData = docTest?.doctor || docTest?.profile || docTest?.data || docTest;
+          if (docData && (docData._id || docData.fullName || docData.specialization)) {
+            role = 'doctor';
+            fullName = docData.fullName || fullName;
+            profileId = docData._id || profileId;
           }
-        } else if (role === 'doctor') {
+        } catch {
+          role = 'patient';
+        }
+      }
+
+      if (!role) {
+        role = form.email.toLowerCase().includes('doctor') ? 'doctor' : 'patient';
+      }
+
+      // Fetch profile based on detected role
+      try {
+        if (role === 'doctor') {
           const docRes = await getDoctorProfileApi();
-          const doc = docRes.doctor || docRes.profile || docRes;
+          const doc = docRes.doctor || docRes.profile || docRes.data || docRes;
           if (doc && doc.fullName) {
             fullName = doc.fullName;
-            profileId = doc._id || profileId;
+            profileId = doc._id || doc.id || profileId;
+          }
+        } else {
+          const patRes = await getPatientProfileApi();
+          const pat = patRes.patient || patRes.profile || patRes.data || patRes;
+          if (pat && pat.fullName) {
+            fullName = pat.fullName;
+            profileId = pat._id || pat.id || profileId;
           }
         }
       } catch {
         // Fallback gracefully
       }
 
+      const rawName =
+        fullName ||
+        res.user?.fullName ||
+        res.user?.name ||
+        res.data?.user?.fullName ||
+        res.data?.user?.name ||
+        tokenPayload?.name ||
+        tokenPayload?.fullName ||
+        form.email.split('@')[0];
+
       const loggedUser: User = {
         id: profileId,
-        name: fullName || u.fullName || u.name || form.email.split('@')[0],
-        email: u.email || form.email,
-        role: role,
+        name: rawName,
+        email: res.user?.email || res.data?.user?.email || form.email,
+        role: role as 'doctor' | 'patient',
       };
       onLogin(loggedUser);
     } catch (err: any) {
