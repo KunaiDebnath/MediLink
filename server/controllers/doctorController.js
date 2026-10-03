@@ -39,7 +39,8 @@ const updateDoctorProfile = async (req, res) => {
         hospitalName,
         clinicAddress,
         consultationFee,
-        bio
+        bio,
+        availability
     } = req.body;
     if (fullName !== undefined && (typeof fullName !== "string" || fullName.trim() === "")) {
         return res.status(400).json({
@@ -101,6 +102,12 @@ const updateDoctorProfile = async (req, res) => {
             message: "Bio must be a string"
         })
     }
+    if (availability !== undefined && (typeof availability !== "object" || availability === null)) {
+        return res.status(400).json({
+            success: false,
+            message: "Availability must be an object"
+        });
+    }
 
     doctor.fullName = fullName ?? doctor.fullName;
     doctor.phoneNumber = phoneNumber ?? doctor.phoneNumber;
@@ -111,7 +118,7 @@ const updateDoctorProfile = async (req, res) => {
     doctor.clinicAddress = clinicAddress ?? doctor.clinicAddress;
     doctor.consultationFee = consultationFee ?? doctor.consultationFee;
     doctor.bio = bio ?? doctor.bio;
-
+    doctor.availability = availability ?? doctor.availability;
     await doctor.save();
 
     res.status(200).json({
