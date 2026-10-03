@@ -161,7 +161,9 @@ export default function DoctorDashboard({ user, navigate, onToast }: DoctorDashb
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-slate-900">Today's Appointments</h2>
-          <span className="text-xs text-slate-400">Oct 5, 2026</span>
+          <span className="text-xs text-slate-500 font-medium">
+            {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </span>
         </div>
 
         {todayApts.length === 0 ? (
