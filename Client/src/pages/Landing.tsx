@@ -84,28 +84,28 @@ export default function Landing({ navigate }: LandingProps) {
   return (
     <div className="bg-white">
       {/* ── Hero ── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-brand-50 via-white to-brand-50/30 pt-24 pb-20">
+      <section className="relative overflow-hidden bg-gradient-to-br from-brand-50 via-white to-brand-50/30 pt-8 sm:pt-12 pb-8 sm:pb-10">
         {/* Background decoration */}
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-brand-100/40 to-transparent pointer-events-none" aria-hidden="true" />
         <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-brand-100/50 blur-3xl pointer-events-none" aria-hidden="true" />
         <div className="absolute -bottom-12 left-0 w-64 h-64 rounded-full bg-teal-100/40 blur-2xl pointer-events-none" aria-hidden="true" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Left content */}
             <div className="max-w-xl">
-              <div className="inline-flex items-center gap-2 bg-brand-100 text-brand-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-6">
+              <div className="inline-flex items-center gap-2 bg-brand-100 text-brand-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
                 <HeartPulseIcon size={14} />
                 Healthcare, simplified
               </div>
-              <h1 className="text-4xl sm:text-5xl font-bold text-slate-900 leading-tight mb-5">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-tight mb-4">
                 Find the right doctor.{' '}
                 <span className="text-brand-600">Book the right time.</span>
               </h1>
-              <p className="text-lg text-slate-600 leading-relaxed mb-8">
+              <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-6">
                 MediLink makes it simple to discover doctors, check availability, and manage appointments — all in one trusted platform.
               </p>
-              <div className="flex flex-wrap gap-3 mb-10">
+              <div className="flex flex-wrap gap-3 mb-6">
                 <Button size="lg" onClick={() => navigate('find-doctors')}>
                   Find a Doctor
                   <ArrowRightIcon size={16} />
@@ -121,7 +121,7 @@ export default function Landing({ navigate }: LandingProps) {
             </div>
 
             {/* Right: Hero visual */}
-            <div className="hidden lg:flex justify-center items-center">
+            <div className="hidden lg:flex justify-center items-center pb-4 pr-4">
               <div className="relative w-full max-w-md">
                 {/* Main card */}
                 <div className="bg-white rounded-2xl shadow-xl border border-brand-100 p-6 relative z-10">
@@ -164,7 +164,7 @@ export default function Landing({ navigate }: LandingProps) {
                 </div>
 
                 {/* Floating badge 2 */}
-                <div className="absolute -bottom-4 -right-4 bg-white rounded-xl shadow-lg border border-slate-100 px-3 py-2 z-20">
+                <div className="absolute -bottom-2 -right-2 bg-white rounded-xl shadow-lg border border-slate-100 px-3 py-2 z-20">
                   <p className="text-xs text-slate-500 mb-0.5">Doctors available</p>
                   <p className="text-lg font-bold text-brand-600">1,200+</p>
                 </div>
@@ -175,7 +175,7 @@ export default function Landing({ navigate }: LandingProps) {
       </section>
 
       {/* ── Stats ── */}
-      <section className="bg-brand-600 py-12">
+      <section className="bg-brand-600 py-6 sm:py-8">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
             {stats.map(s => (
